@@ -30,10 +30,11 @@ export const getPost = asyncHandler(async (req: AuthRequest, res: Response, next
 })
 
 export const getPosts = asyncHandler(async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const { posts, limit, page } = await Post.getPosts(req.query)
+    const { posts, limit, page, totalCount } = await Post.getPosts(req.query)
     res.status(OK).json({
         posts,
         limit,
-        page
+        page,
+        totalCount
     })
 })

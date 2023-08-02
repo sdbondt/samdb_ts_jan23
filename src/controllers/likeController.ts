@@ -9,7 +9,6 @@ export const handleLike = asyncHandler(async (req: AuthRequest, res: Response, n
     const { postId, commentId } = req.params
     const documentId = postId || commentId
     const model = postId ? 'Post': 'Comment'
-    const like = await Like.handleLike(model, documentId, req.user)
-    if (!like) res.status(OK).json({ msg: 'Like got deleted.' })
-    res.status(CREATED).json({ like })
+    const document = await Like.handleLike(model, documentId, req.user)
+    res.status(CREATED).json({ document })
 })

@@ -4,6 +4,7 @@ import CustomError from './customError'
 const { INTERNAL_SERVER_ERROR } = StatusCodes
 
 export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+  console.log(err)
   if (err instanceof CustomError) return res.status(err.statusCode).json({ message: err.message })
   return res.status(INTERNAL_SERVER_ERROR).json({ message: "Server Error" })
 }

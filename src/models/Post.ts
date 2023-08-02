@@ -31,6 +31,7 @@ interface getPostsInterface {
     posts: IPost[];
     limit: number;
     page: number;
+    totalCount: number;
 }
 
 interface PostModel extends Model<IPost> {
@@ -60,6 +61,9 @@ const PostSchema = new Schema({
         ref: 'User',
         required: [true, 'A post must belong to a user.'],
     }
+}, {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 })
 
 PostSchema.methods.authorizeAction = function (user: IUser) {
@@ -104,7 +108,23 @@ PostSchema.statics.deletePost = async function (postId: string, user: IUser) {
 
 PostSchema.statics.getPost = async function (postId: string) {
     Post.validateID(postId)
-    const post = await this.findById(postId).populate('comments user')
+    const post = await this.findById(postId)
+        .populate('user')
+        .populate({
+            path: 'comments',
+            populate: {
+                path: 'user',
+                model: 'User'
+            }
+        })
+        .populate({
+            path: 'comments',
+            populate: {
+                path: 'likes',
+                model: 'Like'
+            }
+        })
+        .populate('likes')
     if(!post) throw new CustomError('No post found.', BAD_REQUEST)
     return post
 }
@@ -127,11 +147,13 @@ PostSchema.statics.getPosts = async function (query: searchQuery) {
     const skip = (page - 1) * limit
     let queryObj: QueryObj = {};
     if (q) queryObj.$or = [{ title: { $regex: q, $options: 'i'}}, { content: { $regex: q, $options: 'i'}}]
-    const posts = await this.find(queryObj).sort(sortBy).skip(skip).limit(limit)
+    const totalCount = await this.countDocuments(queryObj)
+    const posts = await this.find(queryObj).sort(sortBy).skip(skip).limit(limit).populate('user')
     return {
         posts,
         page,
-        limit
+        limit,
+        totalCount
     }
 }
 

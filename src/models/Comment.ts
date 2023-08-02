@@ -48,6 +48,9 @@ const CommentSchema = new Schema({
         ref: 'Post',
         required: [true, 'A comment must belong to a post.']
     }
+}, {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 })
 
 CommentSchema.methods.authorizeAction = function (user: IUser) {
@@ -64,6 +67,7 @@ CommentSchema.statics.createComment = async function (content: string, postId, u
         user,
         post
     })
+    await comment.populate('likes')
     return {
         comment,
         post
@@ -77,7 +81,8 @@ CommentSchema.statics.updateComment = async function (content: string, commentId
     const comment = await Comment.getComment(commentId)
     comment.authorizeAction(user)
     comment.content = content
-    return comment.save()
+    await comment.save()
+    return comment.populate('likes')
 }
 
 CommentSchema.statics.deleteComment = async function (commentId: string, user: IUser) {

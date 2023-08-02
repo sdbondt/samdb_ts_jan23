@@ -3,6 +3,8 @@ const { BAD_REQUEST } = StatusCodes
 import mongoose, { Schema, model, Document, Model, } from 'mongoose'
 import CustomError from '../errorHandlers/customError'
 import { IUser } from './User'
+import { IPost } from './Post'
+import { IComment } from './Comment'
 
 export interface ILike extends Document {
     user: string;
@@ -12,7 +14,7 @@ export interface ILike extends Document {
 }
 
 export interface LikeModel extends Model<ILike> {
-    handleLike(onModel: 'Comment' | 'Post', documentID: string, user: IUser | undefined): Promise<ILike>
+    handleLike(onModel: 'Comment' | 'Post', documentID: string, user: IUser | undefined): Promise<IPost | IComment>
 }
 
 const LikeSchema = new Schema({
@@ -48,13 +50,17 @@ LikeSchema.statics.handleLike = async function (onModel: string, documentID: str
         onModel,
         receiver: document.user
     })
-    if (!likeExists) return this.create({
+    if (!likeExists) {
+        await this.create({
             onModel,
             onDocument: documentID,
             receiver: document.user,
             user,
         })
-    await likeExists.remove()
+    } else {
+        await likeExists.remove()
+    }
+    return document.populate('likes user')
 }
 
 export const Like = model<ILike, LikeModel>('Like', LikeSchema)
